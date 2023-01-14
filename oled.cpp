@@ -32,8 +32,8 @@ int main( int argc, char * argv [] ) {
 		}
     } 
 
-/*
-	SSD1306 myDisplay;
+
+	/*SSD1306 myDisplay;
 	myDisplay.setDisplayMode(SSD1306::Mode::SCROLL);
 	myDisplay.setWordWrap(TRUE);
 	myDisplay.textDisplay("THIS IS THE FIRST LINE.");
@@ -51,6 +51,6 @@ int main( int argc, char * argv [] ) {
 		char buffer [10];
 		sprintf (buffer, "LINE %c", i + 64);
 		myDisplay.textDisplay(buffer);
-	}
-	*/
+	}*/
+	
 }
