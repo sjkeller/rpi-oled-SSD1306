@@ -8,9 +8,10 @@
 #define HOSTIP      "hostname -I | cut -d' ' -f1"
 #define RAMTOTAL    "free -m | awk 'NR==2{print $2}'"
 #define RAMUSED     "free -m | awk 'NR==2{print $3}'"
+#define RAMLOAD     "free -m | awk 'NR==2{print 100*$3/$2}'"
 #define TEMP        "vcgencmd measure_temp | cut -d'=' -f2"
 #define CLOCK       "cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq | awk '{print $1/1e6}'"
-#define CPULOAD     "top -bn 1 |grep \"Cpu(s)\" | awk '{print $2+$6+$4+$12+$14+$16 \"%\"}'"
+#define CPULOAD     "top -bn 1 |grep \"Cpu(s)\" | awk '{print $2+$6+$4+$12+$14+$16}'"
 #define DRIVETOTAL  "lsblk -o size,fsused /dev/sda1 | awk 'NR==2{print $1}'"
 #define DRIVEUSED   "lsblk -o size,fsused /dev/sda1 | awk 'NR==2{print $2}'"
 #define UPTIME      "uptime -p"
@@ -51,6 +52,21 @@ char* run_shell_command(const char* cmd) {
     return result;
 }
 
+char* progress_bar(int percentage) {
+    int i;
+    static char bar[35];
+    for (i = 0; i < 35; i++) {
+        if (i < (percentage * 35 / 100)) {
+            bar[i] = '|';
+        } else {
+            bar[i] = ' ';
+        }
+    }
+    bar[35] = '\0';
+    return bar;
+}
+
+
 int main( int argc, char * argv [] ) {
 
     char textBuffer[8][60];
@@ -75,23 +91,32 @@ int main( int argc, char * argv [] ) {
     totalram = run_shell_command(RAMTOTAL);
     totaldisk = run_shell_command(DRIVETOTAL);
 
-    sprintf(textBuffer[1], "-------------------------------");
-    sprintf(textBuffer[5], "-------------------------------");
+    
 
     while(1) {
         
-        sprintf(textBuffer[4], "DISK:    %sB / %sB", run_shell_command(DRIVEUSED), totaldisk);
+        sprintf(textBuffer[5], "DISK:    %sB / %sB", run_shell_command(DRIVEUSED), totaldisk);
         sprintf(textBuffer[7], "%s update(s) pending", run_shell_command(AVAILUP));
 
         for (int k = 0; k < 60; k ++) {
 
+            int percentage;
             time_t current_time = time(NULL);
             struct tm *time_info = localtime(&current_time);
             strftime(time_string, sizeof(time_string), "%H:%M", time_info);
-
             sprintf(textBuffer[0], "%s - %s - %s", host, hostip, time_string);
-            sprintf(textBuffer[2], "CPU:    %s @ %sGHz %s", run_shell_command(CPULOAD), run_shell_command(CLOCK), run_shell_command(TEMP));
-            sprintf(textBuffer[3], "RAM:    %sMB / %sMB", run_shell_command(RAMUSED), totalram);
+
+            percentage = atoi(run_shell_command(CPULOAD));
+
+            sprintf(textBuffer[1], "CPU:    %d%% @ %sGHz %s", percentage, run_shell_command(CLOCK), run_shell_command(TEMP));
+            sprintf(textBuffer[2], "%s", progress_bar(percentage));
+
+            percentage = atoi(run_shell_command(RAMLOAD));
+
+            sprintf(textBuffer[3], "RAM:    %d%% %sMB / %sMB", percentage, run_shell_command(RAMUSED), totalram);
+            sprintf(textBuffer[4], "%s", progress_bar(percentage));
+
+        
             sprintf(textBuffer[6], "%s", run_shell_command(UPTIME));
             
 
